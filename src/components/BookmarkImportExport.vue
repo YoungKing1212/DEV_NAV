@@ -304,52 +304,6 @@ const importFile = async (file: File) => {
   }
 }
 
-// 带进度的书签解析
-const parseBookmarksWithProgress = async (doc: Document, onProgress: (current: number) => void) => {
-  const { bookmarks, folders } = parseBookmarksFile(doc, onProgress)
-  return { bookmarks, folders }
-}
-
-// 导出书签
-const exportBookmarks = async () => {
-  exporting.value = true
-  try {
-    if (bookmarkStore.bookmarks.length === 0) {
-      throw new BookmarkError(
-        '没有可导出的书签',
-        ErrorCodes.EXPORT_ERROR,
-        '请先添加书签再导出'
-      )
-    }
-
-    const html = generateBookmarkHtml(bookmarkStore.bookmarks, bookmarkStore.folders)
-    
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `bookmarks_${new Date().toISOString().split('T')[0]}.html`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    
-    toast.value?.show('导出成功')
-    showDialog.value = false
-  } catch (error) {
-    console.error('导出失败:', error)
-    const errorMessage = getErrorMessage(error)
-    toast.value?.show({
-      type: 'error',
-      title: '导出失败',
-      message: errorMessage,
-      duration: 5000
-    })
-  } finally {
-    exporting.value = false
-  }
-}
-
 function processBookmarkNode(node: chrome.bookmarks.BookmarkTreeNode, parentPath: string[] = []): void {
   // 跳过书签栏节点
   if (node.title === "书签栏" || node.title === "Bookmarks Bar") {
@@ -391,6 +345,24 @@ function processBookmarkNode(node: chrome.bookmarks.BookmarkTreeNode, parentPath
       url: node.url,
       tag: tag
     })
+  }
+}
+
+async function syncFromChrome() {
+  try {
+    await bookmarkStore.syncFromChrome()
+    toast.value?.show('同步成功', 'success')
+  } catch (error) {
+    console.error('Sync error:', error);
+    let errorMessage = '同步失败';
+    if (error instanceof Error) {
+      if (error.message.includes('安装')) {
+        errorMessage = '请先安装并启用 Chrome 扩展';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    toast.value?.show(errorMessage, 'error');
   }
 }
 </script> 

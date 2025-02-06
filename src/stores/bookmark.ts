@@ -134,24 +134,28 @@ export const useBookmarkStore = defineStore('bookmark', {
       }
     },
 
-    // 添加按文件夹删除方法
-    removeBookmarksByFolder(folderPath: string) {
-      this.bookmarks = this.bookmarks.filter(bookmark => bookmark.tag !== folderPath)
-      this.saveToLocalStorage()
-    },
-
     async syncFromChrome() {
       try {
         this.syncing = true
-        // 检查是否安装了扩展
-        if (!chrome?.runtime) {
+        // 检查扩展是否可用
+        if (!window.chrome || !window.chrome.runtime) {
           throw new Error('请先安装 Chrome 扩展')
         }
         
         // 通过消息获取书签
-        const response = await new Promise<{ bookmarks?: chrome.bookmarks.BookmarkTreeNode[] }>((resolve) => {
-          chrome.runtime.sendMessage({ type: 'GET_BOOKMARKS' }, resolve);
-        });
+        const response = await new Promise<{ bookmarks?: chrome.bookmarks.BookmarkTreeNode[] }>((resolve, reject) => {
+          chrome.runtime.sendMessage(
+            'chnkkjkkjhpocggimaakdkomgejjdajf',
+            { type: 'GET_BOOKMARKS' },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message))
+              } else {
+                resolve(response)
+              }
+            }
+          )
+        })
         
         if (response?.bookmarks) {
           // 处理书签数据
@@ -205,16 +209,6 @@ export const useBookmarkStore = defineStore('bookmark', {
     }
   }
 })
-
-// 辅助函数：验证 URL
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url)
-    return true
-  } catch {
-    return false
-  }
-}
 
 interface ChromeBookmark {
   id: string;

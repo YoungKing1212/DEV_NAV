@@ -1,7 +1,7 @@
 # DevNav - 开发者导航与工具集
 
 <p align="center">
-  <img src="docs/images/logo.png" width="120" height="120" alt="DevNav Logo">
+  <img src="docs/images/logo.png" width="200" height="200" alt="DevNav Logo">
 </p>
 
 <p align="center">

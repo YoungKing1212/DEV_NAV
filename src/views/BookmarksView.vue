@@ -22,7 +22,12 @@
                 点击下载
               </button>
             </li>
-            <li>打开 Chrome 扩展页面 (chrome://extensions/)</li>
+            <li>打开 Chrome 扩展页面：
+              <div class="mt-1 text-sm text-gray-500">
+                1. 在浏览器地址栏输入: chrome://extensions
+                2. 或者点击浏览器右上角菜单 → 更多工具 → 扩展程序
+              </div>
+            </li>
             <li>开启开发者模式</li>
             <li>将下载的文件拖放到扩展页面完成安装</li>
           </ol>
@@ -34,10 +39,10 @@
               稍后安装
             </button>
             <button
-              @click="openExtensionsPage"
+              @click="copyExtensionsUrl"
               class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
-              打开扩展页面
+              复制扩展页面地址
             </button>
           </div>
         </div>
@@ -607,45 +612,6 @@ const filteredBookmarks = computed(() => {
   })
 })
 
-// 获取标签层级结构
-const tagHierarchy = computed(() => {
-  const hierarchy = new Map<string, Set<string>>()
-  
-  bookmarkStore.bookmarks.forEach(bookmark => {
-    bookmark.tags.forEach(tag => {
-      const parts = tag.split('/')
-      parts.forEach((part, index) => {
-        const parentTag = index > 0 ? parts[index - 1] : null
-        if (!hierarchy.has(part)) {
-          hierarchy.set(part, new Set())
-        }
-        if (parentTag) {
-          hierarchy.get(parentTag)?.add(part)
-        }
-      })
-    })
-  })
-  
-  return hierarchy
-})
-
-// 获取根标签（没有父标签的标签）
-const rootTags = computed(() => {
-  const allTags = new Set(bookmarkStore.tags)
-  const childTags = new Set<string>()
-  
-  tagHierarchy.value.forEach((children) => {
-    children.forEach(child => childTags.add(child))
-  })
-  
-  return Array.from(allTags).filter(tag => !childTags.has(tag))
-})
-
-// 获取子标签
-const getChildTags = (parentTag: string) => {
-  return Array.from(tagHierarchy.value.get(parentTag) || [])
-}
-
 // 标签是否展开
 const expandedTags = ref<Set<string>>(new Set())
 
@@ -850,88 +816,10 @@ const vStagger = stagger
 const tagSearchQuery = ref('')
 const tagSearchDebounce = ref<number>()
 
-// 搜索结果缓存
-const searchResultsCache = ref(new Map<string, TagSearchResult[]>())
-
-// 获取搜索结果
-const getSearchResults = (tags: string[], query: string): TagSearchResult[] => {
-  const cacheKey = `${tags.join(',')}:${query}`
-  if (searchResultsCache.value.has(cacheKey)) {
-    return searchResultsCache.value.get(cacheKey)!
-  }
-
-  const results = tags.map(tag => ({
-    tag,
-    score: getSearchScore(tag, query)
-  })).filter(result => result.score > 0)
-    .sort((a, b) => b.score - a.score)
-
-  searchResultsCache.value.set(cacheKey, results)
-  return results
+// 获取子标签
+const getChildTags = (parentTag: string) => {
+  return Array.from(tagHierarchy.value.get(parentTag) || [])
 }
-
-// 过滤后的根标签
-const filteredRootTags = computed(() => {
-  if (!tagSearchQuery.value) return rootTags.value
-
-  const query = tagSearchQuery.value
-  const results = getSearchResults(rootTags.value, query)
-  
-  // 如果有直接匹配的子标签，也包含其父标签
-  const childResults = rootTags.value.filter(tag => {
-    const children = getChildTags(tag)
-    return children.some(child => {
-      const score = getSearchScore(child, query)
-      return score > 0.6 // 只考虑相关度较高的匹配
-    })
-  })
-
-  const allMatchedTags = new Set([
-    ...results.map(r => r.tag),
-    ...childResults
-  ])
-
-  return Array.from(allMatchedTags)
-})
-
-// 获取过滤后的子标签
-const getFilteredChildTags = (parentTag: string) => {
-  const children = getChildTags(parentTag)
-  if (!tagSearchQuery.value) return children
-
-  const results = getSearchResults(children, tagSearchQuery.value)
-  return results.map(r => r.tag)
-}
-
-// 监听搜索输入
-watch(tagSearchQuery, (newQuery) => {
-  if (tagSearchDebounce.value) {
-    clearTimeout(tagSearchDebounce.value)
-  }
-  
-  // 清除缓存
-  if (!newQuery) {
-    searchResultsCache.value.clear()
-    return
-  }
-
-  // 延迟处理搜索
-  tagSearchDebounce.value = window.setTimeout(() => {
-    // 预热缓存
-    getSearchResults(rootTags.value, newQuery)
-    rootTags.value.forEach(tag => {
-      const children = getChildTags(tag)
-      getSearchResults(children, newQuery)
-    })
-  }, 300)
-})
-
-// 清理
-onUnmounted(() => {
-  if (tagSearchDebounce.value) {
-    clearTimeout(tagSearchDebounce.value)
-  }
-})
 
 // 在 script setup 中添加删除方法
 const deleteByTag = async (tag: string) => {
@@ -961,24 +849,58 @@ const showExtensionGuide = ref(false)
 // 处理同步
 async function handleSync() {
   try {
-    // 检查是否已安装扩展
-    if (!chrome?.bookmarks) {
+    // 检查扩展是否可用
+    if (!window.chrome || !window.chrome.runtime) {
       showExtensionGuide.value = true
+      toast.value?.show({
+        type: 'error',
+        message: '请先安装 Chrome 扩展',
+        duration: 3000
+      })
       return
     }
-    
-    await bookmarkStore.syncFromChrome()
-    toast.value?.show({
-      type: 'success',
-      message: '同步成功',
-      duration: 3000
-    })
+
+    // 尝试与扩展建立连接
+    console.log('Sending PING message...');
+    chrome.runtime.sendMessage(
+      'chnkkjkkjhpocggimaakdkomgejjdajf',
+      { type: 'PING' },
+      (response) => {
+        console.log('Received response:', response);
+        if (chrome.runtime.lastError) {
+          console.error('Extension connection error:', chrome.runtime.lastError)
+          showExtensionGuide.value = true
+          toast.value?.show({
+            type: 'error',
+            message: '连接扩展失败，请确保已安装并启用扩展',
+            duration: 3000
+          })
+        } else if (response?.success) {
+          showExtensionGuide.value = false
+          // 扩展连接成功后，执行同步
+          bookmarkStore.syncFromChrome().then(() => {
+            toast.value?.show({
+              type: 'success',
+              message: '同步成功',
+              duration: 2000
+            })
+          }).catch(error => {
+            toast.value?.show({
+              type: 'error',
+              message: error.message || '同步失败',
+              duration: 3000
+            })
+          })
+        }
+      }
+    )
   } catch (error) {
+    console.error('Extension check error:', error)
+    showExtensionGuide.value = true
     toast.value?.show({
       type: 'error',
-      title: '同步失败',
-      message: error.message,
-      duration: 5000
+      message: '扩展检测失败，请确保已安装扩展',
+      duration: 3000
     })
   }
 }
@@ -994,10 +916,23 @@ function downloadExtension() {
   document.body.removeChild(link)
 }
 
-// 打开 Chrome 扩展页面
-function openExtensionsPage() {
-  window.open('chrome://extensions/', '_blank')
-  showExtensionGuide.value = false
+// 复制扩展页面地址到剪贴板
+function copyExtensionsUrl() {
+  navigator.clipboard.writeText('chrome://extensions')
+    .then(() => {
+      toast.value?.show({
+        type: 'success',
+        message: '地址已复制到剪贴板',
+        duration: 2000
+      })
+    })
+    .catch(() => {
+      toast.value?.show({
+        type: 'error',
+        message: '复制失败，请手动输入地址',
+        duration: 3000
+      })
+    })
 }
 </script>
 

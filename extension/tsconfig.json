@@ -9,10 +9,8 @@
     "outDir": "dist",
     "types": ["@types/chrome"],
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
   "include": ["src/**/*"],
