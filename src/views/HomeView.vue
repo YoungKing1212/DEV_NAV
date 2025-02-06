@@ -10,9 +10,76 @@
       </p>
     </header>
 
-    <!-- 搜索栏 -->
-    <div class="max-w-2xl mx-auto mb-16">
-      <SearchBar />
+    <!-- 搜索框和结果 -->
+    <div 
+      class="relative max-w-2xl mx-auto mt-8 mb-12"
+      style="z-index: 10;"
+    >
+      <input
+        type="text"
+        v-model="searchText"
+        placeholder="搜索书签、工具..."
+        class="w-full px-6 py-4 text-lg bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 
+          focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+          placeholder-gray-400 dark:placeholder-gray-500"
+        @click.stop
+        @focus.stop
+      />
+      
+      <div 
+        class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-400"
+        @click.stop
+      >
+        <kbd class="hidden sm:inline-block px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 rounded">⌘</kbd>
+        <kbd class="hidden sm:inline-block px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 rounded">K</kbd>
+      </div>
+
+      <!-- 搜索结果下拉框 -->
+      <div
+        v-show="searchText && (searchResults.length > 0 || showNoResults)"
+        class="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 max-h-[60vh] overflow-y-auto"
+        style="z-index: 20;"
+      >
+        <div 
+          class="p-2"
+        >
+          <div class="space-y-1">
+            <a
+              v-for="result in searchResults"
+              :key="result.id"
+              :href="result.url"
+              target="_blank"
+              class="block px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors duration-200"
+              @click="handleVisit(result)"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {{ result.title }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {{ result.url }}
+                  </div>
+                </div>
+                <span 
+                  v-if="result.tag"
+                  class="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full shrink-0"
+                >
+                  {{ result.tag }}
+                </span>
+              </div>
+            </a>
+            
+            <!-- 无结果提示 -->
+            <div 
+              v-if="searchResults.length === 0" 
+              class="px-3 py-4 text-center text-gray-500 dark:text-gray-400"
+            >
+              没有找到匹配的结果
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 常用书签 -->
@@ -159,12 +226,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useBookmarkStore } from '@/stores/bookmark'
-import SearchBar from '@/components/SearchBar.vue'
+import type { Bookmark } from '@/types'
 import dayjs from 'dayjs'
 
 const bookmarkStore = useBookmarkStore()
+const searchText = ref('')
+const showNoResults = computed(() => searchText.value.length > 0)
+
+// 搜索结果
+const searchResults = computed(() => {
+  if (!searchText.value) return []
+  
+  const query = searchText.value.toLowerCase()
+  return bookmarkStore.bookmarks.filter(bookmark => {
+    return bookmark.title.toLowerCase().includes(query) ||
+      bookmark.url.toLowerCase().includes(query) ||
+      bookmark.tag?.toLowerCase().includes(query)
+  })
+})
 
 // 常用书签（按访问次数排序）
 const frequentBookmarks = computed(() => {

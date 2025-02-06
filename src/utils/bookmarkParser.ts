@@ -1,11 +1,6 @@
 import type { Bookmark, Folder, ParseResult } from '@/types'
 import { isValidUrl } from './validators'
 
-interface ParseResult {
-  bookmarks: Bookmark[]
-  folders: Folder[]
-}
-
 // 获取完整的文件夹路径
 function getFolderPath(node: Element): string[] {
   const paths: string[] = []
