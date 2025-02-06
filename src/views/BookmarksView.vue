@@ -238,68 +238,62 @@
           <!-- 文件夹内的书签 -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pl-6">
             <div
-              v-for="bookmark in getFolderBookmarks(folder.id)"
+              v-for="bookmark in filteredBookmarks.filter(b => b.folderId === folder.id)"
               :key="bookmark.id"
-              class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden"
+              class="group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 hover:shadow-md transition-shadow duration-200"
             >
-              <div class="p-4">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1 min-w-0">
-                    <a
-                      :href="bookmark.url"
-                      target="_blank"
-                      class="block text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 truncate"
-                      @click="handleVisit(bookmark)"
-                    >
-                      {{ bookmark.title }}
-                    </a>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                      {{ bookmark.description }}
-                    </p>
-                  </div>
-                  <div class="flex gap-2 ml-4">
-                    <button
-                      @click="editBookmark(bookmark)"
-                      class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                      title="编辑"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      @click="deleteBookmark(bookmark)"
-                      class="p-1.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                      title="删除"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-3">
-                  <span
-                    v-for="tag in bookmark.tags"
-                    :key="tag"
-                    class="group relative px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
+              <div class="flex justify-between items-start">
+                <div class="flex-1 min-w-0">
+                  <a
+                    :href="bookmark.url"
+                    target="_blank"
+                    class="block text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 truncate"
+                    @click="handleVisit(bookmark)"
                   >
-                    {{ tag }}
-                    <button
-                      @click.stop="deleteByTag(tag)"
-                      class="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity duration-200"
-                      title="删除此标签下的所有书签"
-                    >
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
+                    {{ bookmark.title }}
+                  </a>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                    {{ bookmark.description }}
+                  </p>
+                </div>
+                <div class="flex gap-2 ml-4">
+                  <button
+                    @click="editBookmark(bookmark)"
+                    class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    title="编辑"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="deleteBookmark(bookmark)"
+                    class="p-1.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    title="删除"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <div class="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                <span>访问次数: {{ bookmark.visitCount }}</span>
-                <span>{{ formatDate(bookmark.updatedAt) }}</span>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span
+                  v-if="bookmark.tag"
+                  :key="bookmark.tag"
+                  class="group relative px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
+                >
+                  {{ bookmark.tag }}
+                  <button
+                    @click.stop="deleteByTag(bookmark.tag)"
+                    class="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity duration-200"
+                    title="删除此标签下的所有书签"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
               </div>
             </div>
           </div>
@@ -369,13 +363,13 @@
                     </div>
                     <div class="flex flex-wrap gap-2 mt-3">
                       <span
-                        v-for="tag in bookmark.tags"
-                        :key="tag"
+                        v-if="bookmark.tag"
+                        :key="bookmark.tag"
                         class="group relative px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
                       >
-                        {{ tag }}
+                        {{ bookmark.tag }}
                         <button
-                          @click.stop="deleteByTag(tag)"
+                          @click.stop="deleteByTag(bookmark.tag)"
                           class="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity duration-200"
                           title="删除此标签下的所有书签"
                         >
@@ -414,68 +408,62 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div
-              v-for="bookmark in unclassifiedBookmarks"
+              v-for="bookmark in filteredBookmarks.filter(b => !b.folderId)"
               :key="bookmark.id"
-              class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden"
+              class="group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 hover:shadow-md transition-shadow duration-200"
             >
-              <div class="p-4">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1 min-w-0">
-                    <a
-                      :href="bookmark.url"
-                      target="_blank"
-                      class="block text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 truncate"
-                      @click="handleVisit(bookmark)"
-                    >
-                      {{ bookmark.title }}
-                    </a>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                      {{ bookmark.description }}
-                    </p>
-                  </div>
-                  <div class="flex gap-2 ml-4">
-                    <button
-                      @click="editBookmark(bookmark)"
-                      class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                      title="编辑"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      @click="deleteBookmark(bookmark)"
-                      class="p-1.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                      title="删除"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-3">
-                  <span
-                    v-for="tag in bookmark.tags"
-                    :key="tag"
-                    class="group relative px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
+              <div class="flex justify-between items-start">
+                <div class="flex-1 min-w-0">
+                  <a
+                    :href="bookmark.url"
+                    target="_blank"
+                    class="block text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 truncate"
+                    @click="handleVisit(bookmark)"
                   >
-                    {{ tag }}
-                    <button
-                      @click.stop="deleteByTag(tag)"
-                      class="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity duration-200"
-                      title="删除此标签下的所有书签"
-                    >
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
+                    {{ bookmark.title }}
+                  </a>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                    {{ bookmark.description }}
+                  </p>
+                </div>
+                <div class="flex gap-2 ml-4">
+                  <button
+                    @click="editBookmark(bookmark)"
+                    class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    title="编辑"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="deleteBookmark(bookmark)"
+                    class="p-1.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    title="删除"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <div class="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                <span>访问次数: {{ bookmark.visitCount }}</span>
-                <span>{{ formatDate(bookmark.updatedAt) }}</span>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span
+                  v-if="bookmark.tag"
+                  :key="bookmark.tag"
+                  class="group relative px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
+                >
+                  {{ bookmark.tag }}
+                  <button
+                    @click.stop="deleteByTag(bookmark.tag)"
+                    class="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity duration-200"
+                    title="删除此标签下的所有书签"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
               </div>
             </div>
           </div>
@@ -530,13 +518,13 @@
             </div>
             <div class="flex flex-wrap gap-2 mt-3">
               <span
-                v-for="tag in bookmark.tags"
-                :key="tag"
+                v-if="bookmark.tag"
+                :key="bookmark.tag"
                 class="group relative px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
               >
-                {{ tag }}
+                {{ bookmark.tag }}
                 <button
-                  @click.stop="deleteByTag(tag)"
+                  @click.stop="deleteByTag(bookmark.tag)"
                   class="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity duration-200"
                   title="删除此标签下的所有书签"
                 >
@@ -604,12 +592,12 @@ const toast = ref()
 
 // 过滤后的书签列表
 const filteredBookmarks = computed(() => {
-  return bookmarkStore.bookmarks.filter(bookmark => {
-    const matchesSearch = bookmark.title.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      bookmark.url.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      bookmark.tag.toLowerCase().includes(searchText.value.toLowerCase())
-    return matchesSearch
-  })
+  if (selectedTags.value.length === 0) {
+    return bookmarkStore.bookmarks
+  }
+  return bookmarkStore.bookmarks.filter(bookmark => 
+    selectedTags.value.includes(bookmark.tag)
+  )
 })
 
 // 标签是否展开
@@ -670,56 +658,12 @@ const updateTagStates = () => {
 
 // 切换标签选择
 const toggleTag = (tag: string) => {
-  const state = tagStates.value.get(tag)
-  if (!state) return
-
-  const children = getChildTags(tag)
-  const newSelected = !state.selected
-
-  // 更新当前标签
-  if (newSelected) {
+  const index = selectedTags.value.indexOf(tag)
+  if (index === -1) {
     selectedTags.value.push(tag)
   } else {
-    const index = selectedTags.value.indexOf(tag)
-    if (index !== -1) {
-      selectedTags.value.splice(index, 1)
-    }
+    selectedTags.value.splice(index, 1)
   }
-
-  // 更新子标签
-  children.forEach(child => {
-    const childIndex = selectedTags.value.indexOf(child)
-    if (newSelected && childIndex === -1) {
-      selectedTags.value.push(child)
-    } else if (!newSelected && childIndex !== -1) {
-      selectedTags.value.splice(childIndex, 1)
-    }
-  })
-
-  // 更新父标签
-  const parentTag = getParentTag(tag)
-  if (parentTag) {
-    const parentState = tagStates.value.get(parentTag)
-    if (parentState) {
-      const siblings = getChildTags(parentTag)
-      const selectedSiblings = siblings.filter(sibling => selectedTags.value.includes(sibling))
-      
-      if (selectedSiblings.length === siblings.length) {
-        // 所有子标签都被选中，选中父标签
-        if (!selectedTags.value.includes(parentTag)) {
-          selectedTags.value.push(parentTag)
-        }
-      } else if (selectedSiblings.length === 0) {
-        // 没有子标签被选中，取消选中父标签
-        const parentIndex = selectedTags.value.indexOf(parentTag)
-        if (parentIndex !== -1) {
-          selectedTags.value.splice(parentIndex, 1)
-        }
-      }
-    }
-  }
-
-  updateTagStates()
 }
 
 // 获取父标签
@@ -840,7 +784,7 @@ const filteredTags = computed(() => {
 
 // 获取标签数量
 const getTagCount = (tag: string) => {
-  return bookmarkStore.bookmarks.filter(b => b.tags.includes(tag)).length
+  return bookmarkStore.bookmarks.filter(b => b.tag === tag).length
 }
 
 // 扩展安装相关
@@ -861,14 +805,13 @@ async function handleSync() {
     }
 
     // 尝试与扩展建立连接
-    console.log('Sending PING message...');
     chrome.runtime.sendMessage(
       'chnkkjkkjhpocggimaakdkomgejjdajf',
       { type: 'PING' },
       (response) => {
-        console.log('Received response:', response);
         if (chrome.runtime.lastError) {
-          console.error('Extension connection error:', chrome.runtime.lastError)
+          const error = chrome.runtime.lastError;
+          console.error('Extension connection error:', error.message)
           showExtensionGuide.value = true
           toast.value?.show({
             type: 'error',
@@ -887,7 +830,7 @@ async function handleSync() {
           }).catch(error => {
             toast.value?.show({
               type: 'error',
-              message: error.message || '同步失败',
+              message: error instanceof Error ? error.message : '同步失败',
               duration: 3000
             })
           })
@@ -895,7 +838,8 @@ async function handleSync() {
       }
     )
   } catch (error) {
-    console.error('Extension check error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Extension check error:', errorMessage)
     showExtensionGuide.value = true
     toast.value?.show({
       type: 'error',
@@ -934,6 +878,50 @@ function copyExtensionsUrl() {
       })
     })
 }
+
+// 标签层级结构
+const tagHierarchy = computed(() => {
+  const hierarchy = new Map<string, Set<string>>()
+  
+  bookmarkStore.bookmarks.forEach(bookmark => {
+    if (!bookmark.tag) return
+    
+    // 分割标签路径
+    const parts = bookmark.tag.split('/')
+    
+    // 处理每一级标签
+    for (let i = 0; i < parts.length; i++) {
+      const parentTag = parts.slice(0, i).join('/')
+      const currentTag = parts.slice(0, i + 1).join('/')
+      
+      if (i === 0) {
+        // 根标签
+        if (!hierarchy.has(currentTag)) {
+          hierarchy.set(currentTag, new Set())
+        }
+      } else {
+        // 子标签
+        const parentSet = hierarchy.get(parentTag)
+        if (parentSet) {
+          parentSet.add(currentTag)
+        }
+        if (!hierarchy.has(currentTag)) {
+          hierarchy.set(currentTag, new Set())
+        }
+      }
+    }
+  })
+  
+  return hierarchy
+})
+
+// 根标签列表
+const rootTags = computed(() => {
+  return Array.from(tagHierarchy.value.keys()).filter(tag => {
+    // 找出没有父标签的标签
+    return !Array.from(tagHierarchy.value.values()).some(children => children.has(tag))
+  }).sort()
+})
 </script>
 
 <style>

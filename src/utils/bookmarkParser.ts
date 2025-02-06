@@ -1,4 +1,5 @@
-import type { Bookmark, Folder } from '@/types'
+import type { Bookmark, Folder, ParseResult } from '@/types'
+import { isValidUrl } from './validators'
 
 interface ParseResult {
   bookmarks: Bookmark[]
@@ -148,7 +149,7 @@ export function generateBookmarkHtml(bookmarks: Bookmark[], folders: Folder[]): 
         ${subFolders.map(generateFolderHtml).join('\n')}
         ${folderBookmarks.map(bookmark => `
           <DT><A HREF="${escapeHtml(bookmark.url)}" 
-                ADD_DATE="${Math.floor(bookmark.createdAt.getTime() / 1000)}"
+                ADD_DATE="${Math.floor(bookmark.createdAt / 1000)}"
                 ${bookmark.tags.length ? `TAGS="${escapeHtml(bookmark.tags.join(','))}"` : ''}>
             ${escapeHtml(bookmark.title)}
           </A></DT>
@@ -161,7 +162,7 @@ export function generateBookmarkHtml(bookmarks: Bookmark[], folders: Folder[]): 
   const unclassifiedBookmarks = bookmarksByFolder.get(undefined) || []
   const unclassifiedHtml = unclassifiedBookmarks.map(bookmark => `
     <DT><A HREF="${escapeHtml(bookmark.url)}" 
-          ADD_DATE="${Math.floor(bookmark.createdAt.getTime() / 1000)}"
+          ADD_DATE="${Math.floor(bookmark.createdAt / 1000)}"
           ${bookmark.tags.length ? `TAGS="${escapeHtml(bookmark.tags.join(','))}"` : ''}>
       ${escapeHtml(bookmark.title)}
     </A></DT>
@@ -188,4 +189,73 @@ function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
+}
+
+/**
+ * 解析书签文件并显示进度
+ * @param doc 解析后的 HTML 文档
+ * @param onProgress 进度回调函数
+ * @returns 解析结果，包含书签和文件夹
+ */
+export async function parseBookmarksWithProgress(
+  doc: Document,
+  onProgress: (current: number) => void
+): Promise<ParseResult> {
+  const bookmarks: Bookmark[] = []
+  const folders: Folder[] = []
+  const links = doc.querySelectorAll('a[href]')
+  let processedCount = 0
+
+  // 处理每个链接
+  for (const link of Array.from(links)) {
+    const url = link.getAttribute('href')
+    const title = link.textContent?.trim() || ''
+    
+    if (url && isValidUrl(url)) {
+      // 获取父文件夹信息
+      const parentFolder = link.closest('DL')?.previousElementSibling as HTMLElement
+      const folderName = parentFolder?.textContent?.trim() || ''
+      
+      // 创建或获取文件夹
+      let folderId: string | undefined
+      if (folderName) {
+        const existingFolder = folders.find(f => f.name === folderName)
+        if (existingFolder) {
+          folderId = existingFolder.id
+        } else {
+          folderId = crypto.randomUUID()
+          folders.push({
+            id: folderId,
+            name: folderName,
+            parentId: undefined
+          })
+        }
+      }
+      
+      // 创建书签对象
+      const bookmark: Bookmark = {
+        id: crypto.randomUUID(),
+        title,
+        url,
+        tag: folderName,
+        folderId,
+        visitCount: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }
+      
+      bookmarks.push(bookmark)
+    }
+    
+    // 更新进度
+    processedCount++
+    onProgress(processedCount)
+    
+    // 每处理 100 个书签暂停一下，避免阻塞主线程
+    if (processedCount % 100 === 0) {
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
+
+  return { bookmarks, folders }
 } 

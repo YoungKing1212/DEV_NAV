@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { Bookmark, Category, Folder } from '@/types'
 import { nanoid } from 'nanoid'
+import { isValidUrl } from '@/utils/validators'
 import { syncBookmarks } from '@/api/sync'
 
 export const useBookmarkStore = defineStore('bookmark', {
@@ -23,22 +24,43 @@ export const useBookmarkStore = defineStore('bookmark', {
     },
 
     getFolderBookmarks: (state) => {
-      return (folderId: string) => state.bookmarks.filter(bookmark => bookmark.folderId === folderId)
+      return (folderId: string) => {
+        // 找到对应的文件夹
+        const folder = state.folders.find(f => f.id === folderId)
+        if (!folder) return []
+        
+        // 获取该文件夹下的所有书签
+        return state.bookmarks.filter(bookmark => {
+          // 检查书签的 folderId 是否匹配
+          if (bookmark.folderId === folderId) return true
+          
+          // 检查书签的 tag 是否匹配文件夹名称
+          if (bookmark.tag === folder.name) {
+            // 如果匹配，更新书签的 folderId
+            bookmark.folderId = folderId
+            return true
+          }
+          
+          return false
+        })
+      }
     },
 
     unclassifiedBookmarks: (state) => {
-      return state.bookmarks.filter(bookmark => !bookmark.folderId)
+      return state.bookmarks.filter(bookmark => !bookmark.folderId && !bookmark.tag)
     }
   },
 
   actions: {
     addBookmark(bookmark: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>) {
+      console.log('Adding bookmark:', bookmark)
       const newBookmark: Bookmark = {
         id: nanoid(),
         ...bookmark,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       }
+      console.log('New bookmark:', newBookmark)
       this.bookmarks.push(newBookmark)
       this.saveToLocalStorage()
     },
@@ -83,7 +105,9 @@ export const useBookmarkStore = defineStore('bookmark', {
       // 合并标签
       const newTags = new Set<string>()
       validBookmarks.forEach(bookmark => {
-        bookmark.tags.forEach(tag => newTags.add(tag))
+        if (bookmark.tag) {
+          newTags.add(bookmark.tag)
+        }
       })
       this.tags = [...new Set([...this.tags, ...newTags])]
 
@@ -95,8 +119,8 @@ export const useBookmarkStore = defineStore('bookmark', {
             ...bookmark,
             id: crypto.randomUUID(),
             visitCount: 0,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: Date.now(),
+            updatedAt: Date.now()
           })
         }
       })
@@ -169,10 +193,24 @@ export const useBookmarkStore = defineStore('bookmark', {
         
         return true
       } catch (error) {
-        console.error('同步失败:', error)
+        console.error('同步失败:', error instanceof Error ? error.message : String(error))
         throw error
       } finally {
         this.syncing = false
+      }
+    },
+
+    // 处理书签变化
+    async handleBookmarkChange(): Promise<void> {
+      try {
+        const bookmarks = await chrome.bookmarks.getTree();
+        // 通过消息传递给前端应用
+        await chrome.runtime.sendMessage('chnkkjkkjhpocggimaakdkomgejjdajf', {
+          type: 'BOOKMARKS_CHANGED',
+          data: bookmarks
+        });
+      } catch (error) {
+        console.error('同步失败:', error instanceof Error ? error.message : String(error));
       }
     },
 
@@ -185,10 +223,11 @@ export const useBookmarkStore = defineStore('bookmark', {
             id: nanoid(),
             title: node.title,
             url: node.url,
-            tags: [], // 根据需要设置标签
+            tag: '',
+            folderId: undefined,
             visitCount: 0,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: Date.now(),
+            updatedAt: Date.now()
           }
           this.addBookmark(bookmark)
         } else if (node.children) {
@@ -196,12 +235,31 @@ export const useBookmarkStore = defineStore('bookmark', {
           const folder: Folder = {
             id: nanoid(),
             name: node.title,
-            parentId: null
+            parentId: undefined
           }
           this.folders.push(folder)
           
-          // 递归处理子书签
-          await this.processBookmarks(node.children)
+          // 为子书签设置文件夹 ID
+          const folderId = folder.id
+          node.children.forEach(child => {
+            if (child.url) {
+              const bookmark: Bookmark = {
+                id: nanoid(),
+                title: child.title,
+                url: child.url,
+                tag: folder.name,
+                folderId,
+                visitCount: 0,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+              }
+              this.addBookmark(bookmark)
+            }
+          })
+          
+          // 递归处理子文件夹
+          const subFolders = node.children.filter(child => !child.url)
+          await this.processBookmarks(subFolders)
         }
       }
       

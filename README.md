@@ -50,6 +50,8 @@ npm run dev
 
 ## 构建部署
 
+### 本地开发
+
 ```bash
 # 构建前端应用
 npm run build
@@ -57,6 +59,53 @@ npm run build
 # 构建 Chrome 扩展
 npm run build:extension
 ```
+
+### Docker 部署
+
+项目提供了完整的 Docker 部署支持，包括多阶段构建和 Nginx 配置。
+
+#### 方式一：使用 Docker
+
+```bash
+# 构建镜像
+docker build -t devnav .
+
+# 运行容器
+docker run -d -p 80:80 --name devnav devnav
+
+# 查看容器状态
+docker ps
+```
+
+#### 方式二：使用 Docker Compose
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+#### 部署文件说明
+
+```
+devnav/
+├── Dockerfile          # Docker 构建文件
+├── docker-compose.yml  # Docker Compose 配置
+├── nginx.conf         # Nginx 配置文件
+└── .dockerignore      # Docker 忽略文件
+```
+
+#### 注意事项
+
+- 确保 80 端口未被占用
+- 生产环境部署时建议配置 HTTPS
+- 可以通过修改 nginx.conf 自定义服务器配置
+- 推荐使用 Docker Compose 进行部署管理
 
 ## 技术栈
 

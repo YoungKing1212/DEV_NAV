@@ -33,11 +33,14 @@ export interface Folder {
   name: string
   parentId?: string
   description?: string
-  createdAt: Date
-  updatedAt: Date
 }
 
 export interface TagSearchResult {
   tag: string
   score: number
+}
+
+export interface ParseResult {
+  bookmarks: Bookmark[]
+  folders: Folder[]
 } 

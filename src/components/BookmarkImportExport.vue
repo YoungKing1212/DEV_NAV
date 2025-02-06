@@ -146,7 +146,7 @@ import {
 import { useBookmarkStore } from '@/stores/bookmark'
 import LoadingSpinner from './common/LoadingSpinner.vue'
 import Toast from './common/Toast.vue'
-import { parseBookmarksFile, generateBookmarkHtml } from '@/utils/bookmarkParser'
+import { parseBookmarksFile, generateBookmarkHtml, parseBookmarksWithProgress } from '@/utils/bookmarkParser'
 import { BookmarkError, ErrorCodes } from '@/types/errors'
 
 const bookmarkStore = useBookmarkStore()
@@ -353,16 +353,17 @@ async function syncFromChrome() {
     await bookmarkStore.syncFromChrome()
     toast.value?.show('同步成功', 'success')
   } catch (error) {
-    console.error('Sync error:', error);
-    let errorMessage = '同步失败';
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Sync error:', errorMessage);
+    let displayMessage = '同步失败';
     if (error instanceof Error) {
       if (error.message.includes('安装')) {
-        errorMessage = '请先安装并启用 Chrome 扩展';
+        displayMessage = '请先安装并启用 Chrome 扩展';
       } else {
-        errorMessage = error.message;
+        displayMessage = error.message;
       }
     }
-    toast.value?.show(errorMessage, 'error');
+    toast.value?.show(displayMessage, 'error');
   }
 }
 </script> 
